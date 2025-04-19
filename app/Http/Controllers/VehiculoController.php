@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Vehiculo;
 use Illuminate\Http\Request;
 
 class VehiculoController extends Controller
@@ -45,4 +46,11 @@ class VehiculoController extends Controller
     {
         //
     }
+
+    // VehiculoController.php
+public function showByPlaca($placa)
+{
+    return Vehiculo::where('placa', $placa)->first();
+}
+
 }

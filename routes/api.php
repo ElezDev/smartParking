@@ -13,6 +13,10 @@ Route::get('/user', function (Request $request) {
 
 
 Route::apiResource('clientes', ClienteController::class);
+Route::get('/clientes-by-cc/{cedula}', [ClienteController::class, 'showByCedula']);
+
 Route::apiResource('vehiculos', VehiculoController::class);
+Route::get('/vehiculos/placa/{placa}', [VehiculoController::class, 'showByPlaca']);
+
 Route::apiResource('espacios', EspacioController::class);
 Route::apiResource('registros', RegistroController::class);

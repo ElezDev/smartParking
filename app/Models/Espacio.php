@@ -10,4 +10,11 @@ class Espacio extends Model
     protected $guarded= [
       
     ];
+
+    // Modelo Espacio
+public function registros()
+{
+    return $this->hasMany(Registro::class);
+}
+
 }

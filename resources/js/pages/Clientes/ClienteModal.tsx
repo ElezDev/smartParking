@@ -24,6 +24,7 @@ export default function ClienteModal({ cliente, children, onSuccess }: ClienteMo
     nombre: cliente?.nombre || '',
     email: cliente?.email || '',
     telefono: cliente?.telefono || '',
+    cc:cliente?.cc || '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState(false);
@@ -58,6 +59,7 @@ export default function ClienteModal({ cliente, children, onSuccess }: ClienteMo
         nombre: '',
         email: '',
         telefono: '',
+        cc: ''
       });
       
       // Ejecutar callback de éxito si existe
@@ -101,6 +103,15 @@ export default function ClienteModal({ cliente, children, onSuccess }: ClienteMo
               onChange={handleChange}
             />
             {errors.nombre && <p className="text-red-500 text-sm">{errors.nombre}</p>}
+          </div>
+          <div>
+            <Label htmlFor="cc">Identificacion</Label>
+            <Input
+              id="cc"
+              value={formData.cc}
+              onChange={handleChange}
+            />
+            {errors.cc && <p className="text-red-500 text-sm">{errors.cc}</p>}
           </div>
           
           <div>

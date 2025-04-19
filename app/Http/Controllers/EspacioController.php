@@ -13,10 +13,10 @@ class EspacioController extends Controller
      */
     public function index()
     {
-        $espacios = Espacio::all();
+        $espacios = Espacio::with(['registros.vehiculo'])->get();
         return response()->json($espacios);
     }
-
+    
     /**
      * Store a newly created resource in storage.
      */

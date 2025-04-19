@@ -24,12 +24,19 @@ class ClienteController extends Controller
             'nombre' => 'required|string|max:255',
             'email' => 'required|email|unique:clientes,email',
             'telefono' => 'nullable|string|max:20',
-            'direccion' => 'nullable|string|max:255'
+            'direccion' => 'nullable|string|max:255',
+            'cc' => 'required|string|max:20|',
         ]);
 
         $cliente = Cliente::create($request->all());
         return response()->json($cliente, 201);
     }
+    // ClienteController.php
+        public function showByCedula($cedula)
+        {
+            return Cliente::where('cc', $cedula)->first();
+        }
+
 
     /**
      * Display the specified resource.
@@ -60,7 +67,9 @@ class ClienteController extends Controller
             'nombre' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:clientes,email,'.$id,
             'telefono' => 'nullable|string|max:20',
-            'direccion' => 'nullable|string|max:255'
+            'direccion' => 'nullable|string|max:255',
+            'cc' => 'sometimes|string|max:20|',
+            
         ]);
 
         $cliente->update($request->all());
