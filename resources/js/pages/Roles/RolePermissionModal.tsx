@@ -29,7 +29,7 @@ export function RolePermissionModal({
           roleId={roleId.toString()}
           onSuccess={() => {
             onSuccess();
-            onClose();  // Cerrar el modal cuando se guardan los cambios
+            onClose(); 
           }}
         />
       </DialogContent>
