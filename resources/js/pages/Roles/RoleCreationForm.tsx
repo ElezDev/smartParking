@@ -36,12 +36,12 @@ const RoleCreationForm = ({ onSuccess }: RoleCreationFormProps) => {
   return (
     <div className="space-y-4 py-4">
       <div className="space-y-2">
-        <Label htmlFor="role-name">Role Name</Label>
+        <Label htmlFor="role-name">Nombre</Label>
         <Input
           id="role-name"
           value={roleName}
           onChange={(e) => setRoleName(e.target.value)}
-          placeholder="Enter role name"
+          placeholder="Nombre del rol"
         />
       </div>
       <div className="flex justify-end gap-2">

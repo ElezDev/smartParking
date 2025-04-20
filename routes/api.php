@@ -6,6 +6,7 @@ use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\TarifaController;
+use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\VehiculoController;
 
 
@@ -37,4 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/roles/{roleId}/permissionsAsignados', [PermissionsController::class, 'PermissionByRole']);
     Route::post('/roles/{role}/permissionsassing', [RolesController::class, 'assignPermissions']);
 
+
+    Route::apiResource('usuarios', UsuarioController::class);
+        Route::post('usuarios/{user}/asignar-rol', [UsuarioController::class, 'assignRole']);
 });

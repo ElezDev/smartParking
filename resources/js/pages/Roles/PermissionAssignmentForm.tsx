@@ -41,7 +41,6 @@ export default function PermissionAssignmentForm({
 
         setAllPermissions(permissions);
         
-        // Convertir el response a un objeto de permisos asignados
         const assignedPerms: Record<number, boolean> = {};
         Object.keys(rolePermissionsResponse.permissions).forEach(key => {
           assignedPerms[Number(key)] = true;
@@ -66,32 +65,27 @@ export default function PermissionAssignmentForm({
     }));
   };
 
-  const handleSavePermissions = async () => {
-    setIsSubmitting(true);
-    try {
-      const permissionsToSend: Record<string, string> = {};
-      Object.entries(assignedPermissions).forEach(([id, isAssigned]) => {
-        if (isAssigned) {
-          const perm = allPermissions.find(p => p.id === Number(id));
-          if (perm) {
-            permissionsToSend[id] = perm.name;
-          }
-        }
-      });
-  
-      await assignPermissionsToRole(Number(roleId), Object.keys(assignedPermissions).map(id => Number(id)));
-      
-      toast.success('Permisos actualizados correctamente');
-      if (onSuccess) {
-        onSuccess(); 
-      }
-    } catch (error) {
-      console.error('Error updating permissions:', error);
-      toast.error('Error al actualizar permisos');
-    } finally {
-      setIsSubmitting(false);
+ // Modifica la función handleSavePermissions
+const handleSavePermissions = async () => {
+  setIsSubmitting(true);
+  try {
+    const selectedPermissionIds = Object.entries(assignedPermissions)
+      .filter(([_, isAssigned]) => isAssigned)
+      .map(([id]) => Number(id));
+
+    await assignPermissionsToRole(Number(roleId), selectedPermissionIds);
+    
+    toast.success('Permisos actualizados correctamente');
+    if (onSuccess) {
+      onSuccess(); 
     }
-  };
+  } catch (error) {
+    console.error('Error updating permissions:', error);
+    toast.error('Error al actualizar permisos');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   if (isLoading) {
     return (

@@ -18,7 +18,7 @@ class RolesController extends Controller
         try {
             $roles = Role::with('permissions')->get();
             return response()->json(
-               $roles
+                $roles
             );
         } catch (\Exception $e) {
             return response()->json([
@@ -104,7 +104,7 @@ class RolesController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|unique:roles,name,'.$id.'|max:255',
+            'name' => 'sometimes|string|unique:roles,name,' . $id . '|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,name'
         ]);
@@ -168,36 +168,36 @@ class RolesController extends Controller
         }
     }
     public function assignPermissions(Request $request, $roleId)
-{
-    $validator = Validator::make($request->all(), [
-        'permissions' => 'required|array',
-        'permissions.*' => 'integer|exists:permissions,id',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    try {
-        $role = Role::findOrFail($roleId);
-        $permissions = Permission::whereIn('id', $request->permissions)->get();
-
-        $role->syncPermissions($permissions);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Permissions assigned successfully',
-            'data' => $role->load('permissions')
+    {
+        $validator = Validator::make($request->all(), [
+            'permissions' => 'sometimes|array', // Cambia required por sometimes
+            'permissions.*' => 'integer|exists:permissions,id',
         ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to assign permissions',
-            'error' => $e->getMessage()
-        ], 500);
+    
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+    
+        try {
+            $role = Role::findOrFail($roleId);
+            
+            $permissions = $request->input('permissions', []);
+            $role->syncPermissions($permissions);
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Permissions updated successfully',
+                'data' => $role->load('permissions')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update permissions',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 }

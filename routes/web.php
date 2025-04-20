@@ -51,6 +51,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/roles/{rol}/RolModal', function () {
         return Inertia::render('Roles/RolModal');
     })->name('roles.edit');
+
+    //usuarios
+    Route::get('/usuarios', function () {
+        return Inertia::render('Usuarios/UsuariosPage');
+    })->name('usuarios');
+    Route::get('/usuarios/UsuarioModal', function () {
+        return Inertia::render('Usuarios/UsuarioModal');
+    })->name('usuarios.create');
+    Route::get('/usuarios/{usuario}/UsuarioModal', function () {
+        return Inertia::render('Usuarios/UsuarioModal');
+    })->name('usuarios.edit');
 });
 
 

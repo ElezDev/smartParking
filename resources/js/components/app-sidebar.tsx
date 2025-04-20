@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, CircleParking, Folder, LayoutGrid, ParkingCircle, ParkingSquare, PersonStanding, User2 } from 'lucide-react';
+import { BookOpen, CircleParking, Folder, LayoutGrid, ParkingCircle, ParkingSquare, PersonStanding, User2, User2Icon } from 'lucide-react';
 import AppLogo from './app-logo';
 import { permission } from 'process';
 
@@ -27,7 +27,13 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Roles',
         href: '/roles',
-        icon: PersonStanding,},
+        icon: PersonStanding,
+    },
+    {
+        title: 'Usuarios',
+        href: '/usuarios',
+        icon: User2Icon,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
