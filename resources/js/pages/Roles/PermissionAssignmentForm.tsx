@@ -3,14 +3,16 @@ import {
   fetchPermissions,
   fetchRolePermissions,
   assignPermissionsToRole,
-  type Permission 
+  type Permission,
+  type RolePermissionsResponse
 } from '@/services/rolesService';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface PermissionAssignmentFormProps {
   roleId: string;
@@ -24,21 +26,28 @@ export default function PermissionAssignmentForm({
   onSuccess,
 }: PermissionAssignmentFormProps) {
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
-  const [assignedPermissions, setAssignedPermissions] = useState<number[]>([]);
+  const [assignedPermissions, setAssignedPermissions] = useState<Record<number, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Cargar todos los permisos y los asignados al rol
   useEffect(() => {
     const loadPermissions = async () => {
       try {
-        const [permissions, rolePerms] = await Promise.all([
+        setIsLoading(true);
+        const [permissions, rolePermissionsResponse] = await Promise.all([
           fetchPermissions(),
           fetchRolePermissions(roleId),
         ]);
-        
+
         setAllPermissions(permissions);
-        setAssignedPermissions(rolePerms.map(p => p.id));
+        
+        // Convertir el response a un objeto de permisos asignados
+        const assignedPerms: Record<number, boolean> = {};
+        Object.keys(rolePermissionsResponse.permissions).forEach(key => {
+          assignedPerms[Number(key)] = true;
+        });
+        
+        setAssignedPermissions(assignedPerms);
       } catch (error) {
         console.error('Error loading permissions:', error);
         toast.error('No se pudieron cargar los permisos');
@@ -51,19 +60,31 @@ export default function PermissionAssignmentForm({
   }, [roleId]);
 
   const handleTogglePermission = (permissionId: number) => {
-    setAssignedPermissions(prev => 
-      prev.includes(permissionId)
-        ? prev.filter(id => id !== permissionId)
-        : [...prev, permissionId]
-    );
+    setAssignedPermissions(prev => ({
+      ...prev,
+      [permissionId]: !prev[permissionId]
+    }));
   };
 
   const handleSavePermissions = async () => {
     setIsSubmitting(true);
     try {
-      await assignPermissionsToRole(Number(roleId), assignedPermissions);
+      const permissionsToSend: Record<string, string> = {};
+      Object.entries(assignedPermissions).forEach(([id, isAssigned]) => {
+        if (isAssigned) {
+          const perm = allPermissions.find(p => p.id === Number(id));
+          if (perm) {
+            permissionsToSend[id] = perm.name;
+          }
+        }
+      });
+  
+      await assignPermissionsToRole(Number(roleId), Object.keys(assignedPermissions).map(id => Number(id)));
+      
       toast.success('Permisos actualizados correctamente');
-      onSuccess?.();
+      if (onSuccess) {
+        onSuccess(); 
+      }
     } catch (error) {
       console.error('Error updating permissions:', error);
       toast.error('Error al actualizar permisos');
@@ -74,69 +95,82 @@ export default function PermissionAssignmentForm({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-10 w-10 animate-spin" />
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground">Cargando permisos...</p>
       </div>
     );
   }
 
-  // Agrupar permisos por categoría si tienen prefijo común (ej: "user.create", "user.delete")
-  const groupedPermissions = allPermissions.reduce((acc, permission) => {
-    const [category] = permission.name.split('.');
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(permission);
-    return acc;
-  }, {} as Record<string, Permission[]>);
+  const selectedCount = Object.values(assignedPermissions).filter(Boolean).length;
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>
-            {roleName ? `Permisos para: ${roleName}` : 'Asignar permisos'}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">
+              {roleName ? `Permisos para: ${roleName}` : 'Asignar permisos'}
+            </CardTitle>
+            <Badge variant="outline">
+              {selectedCount} de {allPermissions.length} seleccionados
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {Object.entries(groupedPermissions).map(([category, perms]) => (
-            <div key={category} className="space-y-3">
-              <h3 className="font-medium capitalize">{category}</h3>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {perms.map(permission => (
-                  <div key={permission.id} className="flex items-center space-x-3">
-                    <Switch
-                      id={`perm-${permission.id}`}
-                      checked={assignedPermissions.includes(permission.id)}
-                      onCheckedChange={() => handleTogglePermission(permission.id)}
-                    />
-                    <Label htmlFor={`perm-${permission.id}`} className="flex flex-col">
-                      <span className="font-medium">
-                        {permission.name.split('.')[1] || permission.name}
-                      </span>
-                      {permission.description && (
-                        <span className="text-xs text-muted-foreground">
-                          {permission.description}
-                        </span>
+        
+        <CardContent className="space-y-4">
+          <div className="divide-y rounded-lg border">
+            {allPermissions.map(permission => (
+              <div 
+                key={permission.id} 
+                className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+              >
+                <div className="flex items-center space-x-4">
+                  <Switch
+                    id={`perm-${permission.id}`}
+                    checked={!!assignedPermissions[permission.id]}
+                    onCheckedChange={() => handleTogglePermission(permission.id)}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                  <Label htmlFor={`perm-${permission.id}`} className="flex flex-col space-y-1 cursor-pointer">
+                    <span className="font-medium flex items-center">
+                      {permission.name}
+                      {assignedPermissions[permission.id] && (
+                        <Check className="ml-2 h-4 w-4 text-primary" />
                       )}
-                    </Label>
-                  </div>
-                ))}
+                    </span>
+                    {permission.description && (
+                      <span className="text-sm text-muted-foreground">
+                        {permission.description}
+                      </span>
+                    )}
+                  </Label>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => onSuccess?.()}>
+      <div className="flex justify-end gap-3">
+        <Button 
+          variant="outline" 
+          onClick={() => onSuccess?.()}
+          className="gap-2"
+        >
           Cancelar
         </Button>
         <Button 
           onClick={handleSavePermissions} 
           disabled={isSubmitting}
+          className="gap-2"
         >
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
           Guardar cambios
         </Button>
       </div>

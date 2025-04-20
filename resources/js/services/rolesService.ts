@@ -29,7 +29,16 @@ export interface Permission {
     description?: string;
     createdAt: string;
     updatedAt: string;
+
 }
+export interface RolePermissionsResponse {
+  permissions: Record<string, string>; 
+  role: {
+    id: number;
+    name: string;
+  };
+}
+
 
 export interface AssignPermissionsResponse {
     success: boolean;
@@ -51,8 +60,8 @@ export const fetchPermissions = async (): Promise<Permission[]> => {
   return response.data;
 };
 
-export const assignPermissionsToRole = async (roleId: number, permissionIds: number[]): Promise<AssignPermissionsResponse> => {
-  const response = await api.post<AssignPermissionsResponse>(`/roles/${roleId}/permissions`, { permissions: permissionIds });
+export const assignPermissionsToRole = async (role: number, permissionIds: number[]): Promise<AssignPermissionsResponse> => {
+  const response = await api.post<AssignPermissionsResponse>(`/roles/${role}/permissionsassing`, { permissions: permissionIds });
   return response.data;
 };
 
@@ -60,12 +69,8 @@ export const deleteRole = async (roleId: number): Promise<void> => {
   await api.delete(`/roles/${roleId}`);
 }
 
-export const fetchRolePermissions = async (roleId: string): Promise<Permission[]> => {
-  try {
-    const response = await api.get(`/roles/${roleId}/permissions`);
-    return response.data.permissions || [];
-  } catch (error) {
-    console.error('Error fetching role permissions:', error);
-    throw error;
-  }
-};
+
+  export const fetchRolePermissions = async (roleId: string): Promise<RolePermissionsResponse> => {
+    const response = await axios.get(`/api/roles/${roleId}/permissionsAsignados`);
+    return response.data;
+  };

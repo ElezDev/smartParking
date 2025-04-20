@@ -17,7 +17,7 @@ class PermissionsController extends Controller
     {
         try {
             $permissions = Permission::all();
-            return response()->json( $permissions);
+            return response()->json($permissions);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -96,7 +96,7 @@ class PermissionsController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|unique:permissions,name,'.$id.'|max:255',
+            'name' => 'required|string|unique:permissions,name,' . $id . '|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -152,24 +152,24 @@ class PermissionsController extends Controller
 
 
     public function PermissionByRole($roleId)
-{
-    try {
-        $role = Role::findById($roleId, 'web'); 
-        if (!$role) {
-            return response()->json(['message' => 'Role not found'], 404);
+    {
+        try {
+            $role = Role::findById($roleId, 'web');
+            if (!$role) {
+                return response()->json(['message' => 'Role not found'], 404);
+            }
+            $permissions = $role->permissions->pluck('name', 'id');
+            return response()->json([
+                'permissions' => $permissions,
+                'role' => $role->only(['id', 'name'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error retrieving permissions',
+                'error' => $e->getMessage()
+            ], 500);
         }
-        $permissions = $role->permissions->pluck('name', 'id');
-        return response()->json([
-            'permissions' => $permissions,
-            'role' => $role->only(['id', 'name'])
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving permissions',
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
-    
-       
+
+
 }

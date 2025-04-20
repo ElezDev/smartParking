@@ -15,7 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     //clientes
     Route::get('/clientes', function () {
         return Inertia::render('Clientes/ClientePage');

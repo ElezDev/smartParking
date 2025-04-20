@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Validator;
 
@@ -50,7 +51,7 @@ class RolesController extends Controller
         }
 
         try {
-            $role = Role::create(['name' => $request->name, 'guard_name' => 'api']);
+            $role = Role::create(['name' => $request->name, 'guard_name' => 'web']);
 
             if ($request->has('permissions')) {
                 $role->syncPermissions($request->permissions);
@@ -166,4 +167,37 @@ class RolesController extends Controller
             ], 500);
         }
     }
+    public function assignPermissions(Request $request, $roleId)
+{
+    $validator = Validator::make($request->all(), [
+        'permissions' => 'required|array',
+        'permissions.*' => 'integer|exists:permissions,id',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    try {
+        $role = Role::findOrFail($roleId);
+        $permissions = Permission::whereIn('id', $request->permissions)->get();
+
+        $role->syncPermissions($permissions);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permissions assigned successfully',
+            'data' => $role->load('permissions')
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to assign permissions',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
 }

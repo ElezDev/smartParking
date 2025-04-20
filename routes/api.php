@@ -34,5 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('roles', RolesController::class)->except(['create', 'edit']);
     Route::apiResource('permissions', PermissionsController::class)->except(['create', 'edit']);
-    Route::get('/roles/{roleId}/permissions', [PermissionsController::class, 'PermissionByRole']);
+    Route::get('/roles/{roleId}/permissionsAsignados', [PermissionsController::class, 'PermissionByRole']);
+    Route::post('/roles/{role}/permissionsassing', [RolesController::class, 'assignPermissions']);
+
 });

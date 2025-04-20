@@ -18,9 +18,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function RolesPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
+  const [isRolePermissionModalOpen, setRolePermissionModalOpen] = useState(false);
 
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
+    setRolePermissionModalOpen(false);  // Cerrar el modal después de guardar
   };
 
   return (
@@ -34,15 +36,19 @@ export default function RolesPage() {
           </RoleModal>
         </div>
         
-        <RoleList 
-          key={refreshKey} 
-          onRoleSelect={setSelectedRoleId}
+        <RoleList
+          key={refreshKey}
+          onRoleSelect={roleId => {
+            setSelectedRoleId(roleId);
+            setRolePermissionModalOpen(true); 
+          }}
         />
         
         {selectedRoleId && (
           <RolePermissionModal
             roleId={selectedRoleId}
-            onClose={() => setSelectedRoleId(null)}
+            isOpen={isRolePermissionModalOpen}
+            onClose={() => setRolePermissionModalOpen(false)}  
             onSuccess={handleSuccess}
           />
         )}
