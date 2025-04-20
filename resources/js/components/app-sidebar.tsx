@@ -11,54 +11,65 @@ import {
     Shield,          
     UserCog,         
     BookOpen,        
-  } from 'lucide-react';
-  
+} from 'lucide-react';
 import AppLogo from './app-logo';
-import { permission } from 'process';
+import { usePage } from '@inertiajs/react';
 
-const mainNavItems: NavItem[] = [
+const mainNavItems: (NavItem & { permission?: string })[] = [
     {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutDashboard,
+      title: 'Dashboard',
+      href: '/dashboard',
+      icon: LayoutDashboard,
+      permission: 'dashboard', 
     },
     {
-        title: 'Clientes',
-        href: '/clientes',
-        icon: Users, 
+      title: 'Clientes',
+      href: '/clientes',
+      icon: Users, 
+      permission: 'gestionar clientes',
     },
     {
-        title: 'Espacios',
-        href: '/espacios',
-        icon: ParkingSquare, 
+      title: 'Espacios',
+      href: '/espacios',
+      icon: ParkingSquare, 
+      permission: 'gestionar espacios',
     },
     {
-        title: 'Roles',
-        href: '/roles',
-        icon: Shield, 
+      title: 'Roles',
+      href: '/roles',
+      icon: Shield, 
+      permission: 'gestionar roles',
     },
     {
-        title: 'Usuarios',
-        href: '/usuarios',
-        icon: UserCog, 
+      title: 'Usuarios',
+      href: '/usuarios',
+      icon: UserCog, 
+      permission: 'gestionar usuarios',
     },
-];
+  ];
+  
 
-
-const footerNavItems: NavItem[] = [
+const footerNavItems: (NavItem & { permission?: string })[] = [
     // {
-    //     title: 'Repository',
-    //     href: 'https://github.com/laravel/react-starter-kit',
-    //     icon: Folder,
-    // },
-    // {
-    //     title: 'Documentation',
-    //     href: 'https://laravel.com/docs/starter-kits',
+    //     title: 'Documentación',
+    //     href: '/documentacion',
     //     icon: BookOpen,
+    //     permission: 'view documentation',
     // },
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage().props;
+    const permissions = auth.permissions || [];
+
+    const filteredMainNavItems = mainNavItems.filter(item => {
+        return !item.permission || permissions.includes(item.permission);
+    });
+
+    const filteredFooterNavItems = footerNavItems.filter(item => {
+        return !item.permission || permissions.includes(item.permission);
+    });
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -74,11 +85,11 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={filteredMainNavItems} />
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+                <NavFooter items={filteredFooterNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

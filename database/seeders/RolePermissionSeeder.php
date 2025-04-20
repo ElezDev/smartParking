@@ -10,9 +10,10 @@ class RolePermissionSeeder extends Seeder
 {
     public function run()
     {
-        // Reset cached roles and permissions
+        // Limpiar cache de permisos
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
+        // Lista de permisos
         $permissions = [
             'gestionar usuarios',
             'gestionar roles',
@@ -20,22 +21,29 @@ class RolePermissionSeeder extends Seeder
             'registrar entradas',
             'registrar salidas',
             'generar reportes',
-            'configurar sistema'
+            'configurar sistema',
+            'gestionar clientes',
+            'gestionar espacios',
+            'dashboard',
         ];
 
+        // Crear permisos si no existen
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // $admin = Role::create(['name' => 'admin']);
-        // $admin->givePermissionTo(Permission::all());
-
-        $operador = Role::create(['name' => 'operador']);
+        // Rol operador con permisos limitados
+        $operador = Role::firstOrCreate(['name' => 'operador']);
         $operador->givePermissionTo([
             'registrar entradas',
-            'registrar salidas'
+            'registrar salidas',
         ]);
 
-        $cliente = Role::create(['name' => 'cliente']);
+        // Rol cliente (sin permisos específicos por ahora)
+        $cliente = Role::firstOrCreate(['name' => 'cliente']);
+
+        // Rol admin con todos los permisos
+        $admin = Role::firstOrCreate(['name' => 'admin']);
+        $admin->givePermissionTo(Permission::all());
     }
 }
