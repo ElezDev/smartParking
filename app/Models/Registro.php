@@ -9,7 +9,11 @@ class Registro extends Model
     
     protected $guarded = [];
     protected $table = 'registros';
+    protected $dates = ['entrada', 'salida', 'created_at', 'updated_at'];
 
+    public function getEntradaLocalAttribute() {
+        return $this->entrada->setTimezone('America/Bogota');
+    }
     public function cliente()
     {
         return $this->belongsTo(Cliente::class);

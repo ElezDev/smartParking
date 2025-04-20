@@ -7,6 +7,13 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -68,17 +75,24 @@ const ModalEspacios = ({ data, children, onSuccess }: ClienteModalProps) => {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="tipo">Tipo</Label>
-            <select
-              id="tipo"
+
+            <Select
               value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              className="border rounded-md p-2"
+              onValueChange={(value) => setTipo(value)}
+
             >
-              <option value="Carro">Carro</option>
-              <option value="Moto">Moto</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="CARRO">Carro</SelectItem>
+                <SelectItem value="MOTO">Moto</SelectItem>
+                <SelectItem value="BICICLETA">Bicicleta</SelectItem>
+                <SelectItem value="OTRO">Otro</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
         </div>
 
         <DialogFooter>

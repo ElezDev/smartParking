@@ -24,7 +24,7 @@ class EspacioController extends Controller
     {
         $validated = $request->validate([
             'numero' => 'required|string|max:255|unique:espacios,numero',
-            'tipo' => ['required', Rule::in(['Carro', 'Moto', 'Otro'])],
+            'tipo' => ['required', Rule::in(['CARRO','MOTO','BICICLETA','OTRO'])],
             'disponible' => 'sometimes|boolean'
         ]);
 

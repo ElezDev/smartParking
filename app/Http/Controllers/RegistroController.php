@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers;
 use App\Models\Cliente;
+use App\Models\Tarifa;
 use App\Models\Vehiculo;
 use App\Models\Registro;
 use App\Models\Espacio;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class RegistroController extends Controller
 {
 
- 
+
     public function store(Request $request)
     {
         $request->validate([
@@ -20,16 +22,15 @@ class RegistroController extends Controller
             'nombre' => 'required_if:nuevo_cliente,true|string',
             'placa' => 'required|string',
             'marca' => 'required_if:nuevo_vehiculo,true|string',
-            'modelo' => 'required_if:nuevo_vehiculo,true|string',
             'color' => 'required_if:nuevo_vehiculo,true|string',
             'espacio_id' => 'required|exists:espacios,id',
             'entrada' => 'required|date',
+            'tipo_vehiculo' => 'required|string',
         ]);
-    
+
         DB::beginTransaction();
-    
+
         try {
-            // Buscar o crear cliente
             if ($request->nuevo_cliente) {
                 $cliente = Cliente::firstOrCreate(
                     ['cc' => $request->cc],
@@ -38,8 +39,7 @@ class RegistroController extends Controller
             } else {
                 $cliente = Cliente::where('cc', $request->cc)->firstOrFail();
             }
-    
-            // Buscar o crear vehículo
+
             if ($request->nuevo_vehiculo) {
                 $vehiculo = Vehiculo::firstOrCreate(
                     ['placa' => $request->placa],
@@ -48,32 +48,30 @@ class RegistroController extends Controller
                         'marca' => $request->marca,
                         'modelo' => $request->modelo,
                         'color' => $request->color,
+                        'tipo_vehiculo' => $request->tipo_vehiculo,
                     ]
                 );
             } else {
                 $vehiculo = Vehiculo::where('placa', $request->placa)->firstOrFail();
             }
-    
-            // Verificar si el espacio está ocupado
+
             $espacio = Espacio::findOrFail($request->espacio_id);
             if ($espacio->disponible == 0) {
                 return response()->json([
                     'error' => 'El espacio ya está ocupado',
                 ], 400);
             }
-    
-            // Registrar entrada
+
             $registro = Registro::create([
                 'vehiculo_id' => $vehiculo->id,
                 'espacio_id' => $request->espacio_id,
                 'entrada' => $request->entrada,
             ]);
-    
-            // Marcar espacio como ocupado
+
             $espacio->update(['disponible' => 0]);
-    
+
             DB::commit();
-    
+
             return response()->json([
                 'message' => 'Vehículo registrado exitosamente',
                 'registro' => $registro,
@@ -89,8 +87,37 @@ class RegistroController extends Controller
             ], 500);
         }
     }
-    
-    
+
+
+    public function finalizarServicio(Request $request, $registro_id)
+    {
+        $registro = Registro::findOrFail($registro_id);
+
+        if ($registro->salida !== null) {
+            return response()->json(['error' => 'Este registro ya fue finalizado'], 400);
+        }
+
+        $request->validate([
+            'tarifa' => 'required|numeric|min:0'
+        ]);
+
+        $tarifaFrontend = $request->input('tarifa');
+
+
+        $registro->update([
+            'salida' => now(),
+            'tarifa' => $tarifaFrontend,
+        ]);
+
+        Espacio::where('id', $registro->espacio_id)->update(['disponible' => 1]);
+
+        return response()->json([
+            'message' => 'Servicio finalizado correctamente',
+            'registro' => $registro,
+
+        ]);
+    }
+
 
 }
 

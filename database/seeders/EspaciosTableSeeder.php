@@ -20,8 +20,8 @@ class EspaciosTableSeeder extends Seeder
         for ($i = 1; $i <= 10; $i++) {
             $espacios[] = [
                 'numero' => 'C-' . str_pad($i, 2, '0', STR_PAD_LEFT),
-                'tipo' => 'Carro',
-                'disponible' => rand(0, 1),
+                'tipo' => 'CARRO',
+                'disponible' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -31,19 +31,29 @@ class EspaciosTableSeeder extends Seeder
         for ($i = 1; $i <= 8; $i++) {
             $espacios[] = [
                 'numero' => 'M-' . str_pad($i, 2, '0', STR_PAD_LEFT),
-                'tipo' => 'Moto',
-                'disponible' => rand(0, 1),
+                'tipo' => 'MOTO',
+                'disponible' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+        for ($i = 1; $i <= 8; $i++) {
+            $espacios[] = [
+                'numero' => 'V-' . str_pad($i, 2, '0', STR_PAD_LEFT),
+                'tipo' => 'BICICLETA',
+                'disponible' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
         }
 
+
         // Crear 2 espacios de otro tipo
         for ($i = 1; $i <= 2; $i++) {
             $espacios[] = [
                 'numero' => 'O-' . str_pad($i, 2, '0', STR_PAD_LEFT),
-                'tipo' => 'Otro',
-                'disponible' => rand(0, 1),
+                'tipo' => 'OTRO',
+                'disponible' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];

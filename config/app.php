@@ -105,6 +105,9 @@ return [
         ),
     ],
 
+    'mysql' => [
+    'timezone' => '-05:00', // Para America/Bogota
+    ],
     /*
     |--------------------------------------------------------------------------
     | Maintenance Mode Driver

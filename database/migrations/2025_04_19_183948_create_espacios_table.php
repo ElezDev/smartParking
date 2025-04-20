@@ -17,9 +17,7 @@ return new class extends Migration
             $table->enum(
                 'tipo',
                 [
-                    'Carro',
-                    'Moto',
-                    'Otro',
+                    'CARRO', 'MOTO', 'BICICLETA', 'OTRO'
                 ]
             ) ;
             $table->boolean('disponible')->default(true);

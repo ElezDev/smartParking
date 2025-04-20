@@ -48,9 +48,9 @@ class VehiculoController extends Controller
     }
 
     // VehiculoController.php
-public function showByPlaca($placa)
-{
-    return Vehiculo::where('placa', $placa)->first();
-}
+    public function showByPlaca($placa)
+    {
+        return Vehiculo::where('placa', $placa)->first();
+    }
 
 }

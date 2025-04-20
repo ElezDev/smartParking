@@ -21,7 +21,8 @@ class DatabaseSeeder extends Seeder
         // ]);
         $this->call([
             EspaciosTableSeeder::class,
-            // Otros seeders...
+            TarifaSeeder::class,
+
         ]);
     }
 }

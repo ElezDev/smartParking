@@ -8,10 +8,20 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import ClienteModal from "../Clientes/ClienteModal";
+import { Plus } from "lucide-react";
+
+type TipoVehiculo = "CARRO" | "MOTO" | "BICICLETA" | "OTRO";
 
 export default function AgregarVehiculoModal({
   espacioId,
@@ -24,7 +34,7 @@ export default function AgregarVehiculoModal({
   const [cliente, setCliente] = useState<any>(null);
   const [placa, setPlaca] = useState("");
   const [marca, setMarca] = useState("");
-  const [modelo, setModelo] = useState("");
+  const [tipoVehiculo, setTipoVehiculo] = useState<TipoVehiculo>("CARRO");
   const [color, setColor] = useState("");
   const [showCrearCliente, setShowCrearCliente] = useState(false);
   const [vehiculoExiste, setVehiculoExiste] = useState(false);
@@ -67,13 +77,13 @@ export default function AgregarVehiculoModal({
       if (res.data) {
         setVehiculoExiste(true);
         setMarca(res.data.marca);
-        setModelo(res.data.modelo);
+        setTipoVehiculo(res.data.tipo_vehiculo || "CARRO");
         setColor(res.data.color);
         toast.success("Vehículo encontrado");
       } else {
         setVehiculoExiste(false);
         setMarca("");
-        setModelo("");
+        setTipoVehiculo("CARRO");
         setColor("");
         toast.info("Vehículo no registrado");
       }
@@ -81,7 +91,7 @@ export default function AgregarVehiculoModal({
       console.error(error);
       setVehiculoExiste(false);
       setMarca("");
-      setModelo("");
+      setTipoVehiculo("CARRO");
       setColor("");
       toast.error("Error al buscar vehículo");
     }
@@ -91,20 +101,22 @@ export default function AgregarVehiculoModal({
     if (!placa || !cedula) {
       return toast.error("Cédula y placa son obligatorios");
     }
-  
+
     try {
-      // Obtener fecha actual en hora local (Colombia UTC-5)
       const ahora = new Date();
-      const offset = -5 * 60; // Colombia UTC-5 en minutos
+      const offset = -5 * 60;
       const horaLocal = new Date(ahora.getTime() + offset * 60 * 1000);
-      const entradaFormatted = horaLocal.toISOString().slice(0, 19).replace('T', ' ');
-  
+      const entradaFormatted = horaLocal
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ");
+
       await axios.post("/api/registros", {
         cc: cedula,
         nombre: showCrearCliente ? cliente?.nombre : undefined,
         placa,
         marca: !vehiculoExiste ? marca : undefined,
-        modelo: !vehiculoExiste ? modelo : undefined,
+        tipo_vehiculo: tipoVehiculo,
         color: !vehiculoExiste ? color : undefined,
         espacio_id: espacioId,
         nuevo_cliente: showCrearCliente,
@@ -118,6 +130,7 @@ export default function AgregarVehiculoModal({
       toast.error("Error al guardar vehículo");
     }
   };
+
   return (
     <Dialog
       onOpenChange={(open) => {
@@ -135,29 +148,33 @@ export default function AgregarVehiculoModal({
         </DialogHeader>
 
         <div className="space-y-2">
-          <Input
-            placeholder="Cédula del cliente"
-            value={cedula}
-            onChange={(e) => setCedula(e.target.value)}
-          />
-          <Button variant="outline" onClick={buscarCliente}>
-            Buscar Cliente
-          </Button>
-
-          {cliente && (
-            <div className="bg-green-100 border p-2 rounded">
-              <p><strong>Cliente:</strong> {cliente.nombre}</p>
-            </div>
-          )}
-
-          {showCrearCliente && (
+          {/* Input de cédula + botón buscar + botón + */}
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Cédula del cliente"
+              value={cedula}
+              onChange={(e) => setCedula(e.target.value)}
+            />
+            <Button variant="outline" onClick={buscarCliente}>
+              Buscar
+            </Button>
             <ClienteModal
               onSuccess={async () => {
                 await buscarCliente();
               }}
             >
-              <Button variant="outline">Crear Cliente</Button>
+              <Button variant="outline" size="icon" className="h-10 w-10">
+                <Plus className="h-5 w-5" />
+              </Button>
             </ClienteModal>
+          </div>
+
+          {cliente && (
+            <div className="bg-green-100 border p-2 rounded">
+              <p>
+                <strong>Cliente:</strong> {cliente.nombre}
+              </p>
+            </div>
           )}
 
           <Input
@@ -176,12 +193,24 @@ export default function AgregarVehiculoModal({
             onChange={(e) => setMarca(e.target.value)}
             disabled={vehiculoExiste}
           />
-          <Input
-            placeholder="Modelo"
-            value={modelo}
-            onChange={(e) => setModelo(e.target.value)}
+
+          <Select
+            value={tipoVehiculo}
+            onValueChange={(value: TipoVehiculo) => setTipoVehiculo(value)}
             disabled={vehiculoExiste}
-          />
+            
+            >
+            <SelectTrigger>
+              <SelectValue placeholder="Tipo de vehículo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="CARRO">Carro</SelectItem>
+              <SelectItem value="MOTO">Moto</SelectItem>
+              <SelectItem value="BICICLETA">Bicicleta</SelectItem>
+              <SelectItem value="OTRO">Otro</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Input
             placeholder="Color"
             value={color}
@@ -189,11 +218,7 @@ export default function AgregarVehiculoModal({
             disabled={vehiculoExiste}
           />
 
-          <Input
-            placeholder="Hora de entrada"
-            value={hora}
-            readOnly
-          />
+          <Input placeholder="Hora de entrada" value={hora} readOnly />
         </div>
 
         <DialogFooter className="pt-4">

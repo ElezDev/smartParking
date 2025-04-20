@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vehiculos', function (Blueprint $table) {
+        Schema::create('tarifas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('cliente_id')->constrained();
-            $table->string('placa');
-            $table->string('marca');
-            $table->string('modelo')->nullable();
-            $table->string('color');
             $table->enum('tipo_vehiculo', ['CARRO', 'MOTO', 'BICICLETA', 'OTRO']);
+            $table->decimal('valor_hora', 8, 2);
+            $table->decimal('valor_dia', 8, 2);
+            $table->decimal('valor_minuto', 8, 2)->nullable(); 
+            $table->decimal('valor_mes', 8, 2)->nullable(); 
             $table->timestamps();
         });
     }
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vehiculos');
+        Schema::dropIfExists('tarifas');
     }
 };

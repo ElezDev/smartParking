@@ -3,6 +3,7 @@
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\EspacioController;
 use App\Http\Controllers\RegistroController;
+use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\VehiculoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -20,3 +21,6 @@ Route::get('/vehiculos/placa/{placa}', [VehiculoController::class, 'showByPlaca'
 
 Route::apiResource('espacios', EspacioController::class);
 Route::apiResource('registros', RegistroController::class);
+Route::post('/registros/{registro}/finalizar', [RegistroController::class, 'finalizarServicio']);
+
+Route::get('/calcular-tarifa', [TarifaController::class, 'calcularTarifa']);
