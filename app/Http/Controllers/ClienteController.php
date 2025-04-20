@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 
 class ClienteController extends Controller
@@ -12,6 +13,8 @@ class ClienteController extends Controller
      */
     public function index()
     {
+        // return response()->json(auth()->user()->id);
+
         return response()->json(Cliente::all());
     }
 

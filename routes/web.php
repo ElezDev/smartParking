@@ -11,10 +11,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+});
 
 
+
+Route::middleware(['auth', 'verified'])->group(function () {
     //clientes
-      Route::get('/clientes', function () {
+    Route::get('/clientes', function () {
         return Inertia::render('Clientes/ClientePage');
     })->name('clientes');
     
@@ -37,7 +40,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/espacios/{espacio}/EspacioModal', function () {
         return Inertia::render('Espacios/EspacioModal');
     })->name('espacios.edit');
+
+    //roles
+    Route::get('/roles', function () {
+        return Inertia::render('Roles/RolesPage');
+    })->name('roles');
+    Route::get('/roles/RolModal', function () {
+        return Inertia::render('Roles/RolModal');
+    })->name('roles.create');
+    Route::get('/roles/{rol}/RolModal', function () {
+        return Inertia::render('Roles/RolModal');
+    })->name('roles.edit');
 });
+
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
