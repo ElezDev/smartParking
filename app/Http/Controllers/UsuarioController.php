@@ -62,19 +62,28 @@ class UsuarioController extends Controller
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'name' => 'sometimes|string',
+            'name' => 'sometimes|string|min:2',
             'email' => 'sometimes|email|unique:users,email,'.$user->id,
-            'password' => 'sometimes|min:8'
+            'password' => 'nullable|sometimes|min:8',
+            'role' => 'sometimes|string|exists:roles,name'
         ]);
-
-        $data = $request->all();
-        if($request->has('password')) {
-            $data['password'] = bcrypt($request->password);
+    
+        $updateData = $request->only(['name', 'email']);
+        
+        if ($request->filled('password')) {
+            $updateData['password'] = bcrypt($request->password);
         }
-
-        $user->update($data);
-
-        return $user;
+    
+        $user->update($updateData);
+    
+        if ($request->has('role')) {
+            $user->syncRoles([$request->role]);
+        }
+    
+        return response()->json([
+            'message' => 'Usuario actualizado exitosamente',
+            'user' => $user->load('roles')
+        ]);
     }
 
     public function destroy(User $user)

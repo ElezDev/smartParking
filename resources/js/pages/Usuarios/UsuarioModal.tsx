@@ -38,9 +38,13 @@ const userFormSchema = z.object({
   email: z.string().email({
     message: "Por favor ingresa un email válido.",
   }),
-  password: z.string().min(8, {
-    message: "La contraseña debe tener al menos 8 caracteres.",
-  }),
+  password: z
+    .string()
+    .min(8, {
+      message: "La contraseña debe tener al menos 8 caracteres.",
+    })
+    .optional()
+    .or(z.literal("")),
   role: z.string().min(1, "Debes seleccionar un rol"),
 });
 
@@ -49,9 +53,15 @@ type UserFormValues = z.infer<typeof userFormSchema>;
 interface UserModalProps {
   children: React.ReactNode;
   onSuccess?: () => void;
+  userToEdit?: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  };
 }
 
-export function UserModal({ children, onSuccess }: UserModalProps) {
+export function UserModal({ children, onSuccess, userToEdit }: UserModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<RoleResponse[]>([]);
@@ -67,37 +77,63 @@ export function UserModal({ children, onSuccess }: UserModalProps) {
     },
   });
 
+  // Cargar roles cuando se abre el modal
   useEffect(() => {
-    async function loadRoles() {
-      if (open) {
+    const loadRoles = async () => {
+      if (open && roles.length === 0) {
         setRolesLoading(true);
         try {
           const rolesData = await fetchRoles();
           setRoles(rolesData);
-          if (rolesData.length > 0 && !form.getValues('role')) {
-            form.setValue('role', rolesData[0].name);
-          }
         } catch (error) {
           toast.error("Error al cargar los roles");
         } finally {
           setRolesLoading(false);
         }
       }
-    }
-    loadRoles();
-  }, [open, form]);
+    };
 
-  async function onSubmit(data: UserFormValues) {
+    loadRoles();
+  }, [open]);
+
+  // Resetear formulario cuando cambia el estado de apertura o el usuario a editar
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: userToEdit?.name || "",
+        email: userToEdit?.email || "",
+        password: "",
+        role: userToEdit?.role || (roles.length > 0 ? roles[0].name : ""),
+      });
+    }
+  }, [open, userToEdit, roles]);
+
+  const onSubmit = async (data: UserFormValues) => {
     setLoading(true);
     try {
-      const newUser = await userService.createUser({
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        role: data.role
-      });
-      
-      toast.success(`Usuario ${newUser.name} creado exitosamente`);
+      if (userToEdit) {
+        // Actualizar usuario existente
+        const updatedUser = await userService.updateUser(
+          userToEdit.id.toString(),
+          {
+            name: data.name,
+            email: data.email,
+            ...(data.password && { password: data.password }),
+            role: data.role,
+          }
+        );
+        toast.success(`Usuario ${updatedUser.name} actualizado exitosamente`);
+      } else {
+        // Crear nuevo usuario
+        const newUser = await userService.createUser({
+          name: data.name,
+          email: data.email,
+          password: data.password || "",
+          role: data.role,
+        });
+        toast.success(`Usuario ${newUser.name} creado exitosamente`);
+      }
+
       setOpen(false);
       form.reset();
       onSuccess?.();
@@ -108,19 +144,28 @@ export function UserModal({ children, onSuccess }: UserModalProps) {
           toast.error(errors[key][0]);
         });
       } else {
-        toast.error("Error al crear el usuario");
+        toast.error(
+          userToEdit
+            ? "Error al actualizar el usuario"
+            : "Error al crear el usuario"
+        );
       }
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent
+        className="sm:max-w-[425px]"
+        onInteractOutside={(e) => e.preventDefault()} // Evita cerrar al hacer clic fuera
+      >
         <DialogHeader>
-          <DialogTitle>Nuevo Usuario</DialogTitle>
+          <DialogTitle>
+            {userToEdit ? "Editar Usuario" : "Nuevo Usuario"}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -131,13 +176,17 @@ export function UserModal({ children, onSuccess }: UserModalProps) {
                 <FormItem>
                   <FormLabel>Nombre completo</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ej: Juan Pérez" {...field} />
+                    <Input
+                      placeholder="Ej: Juan Pérez"
+                      {...field}
+                      disabled={loading}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -145,54 +194,75 @@ export function UserModal({ children, onSuccess }: UserModalProps) {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input 
+                    <Input
                       type="email"
-                      placeholder="Ej: usuario@example.com" 
-                      {...field} 
+                      placeholder="Ej: usuario@example.com"
+                      {...field}
+                      disabled={loading}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contraseña</FormLabel>
+                  <FormLabel>
+                    {userToEdit ? "Nueva contraseña" : "Contraseña"}
+                  </FormLabel>
                   <FormControl>
-                    <Input 
+                    <Input
                       type="password"
-                      placeholder="Mínimo 8 caracteres" 
-                      {...field} 
+                      placeholder={
+                        userToEdit
+                          ? "Dejar vacío para no cambiar"
+                          : "Mínimo 8 caracteres"
+                      }
+                      {...field}
+                      value={field.value || ""}
+                      disabled={loading}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="role"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Rol</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
+                  <Select
                     value={field.value}
-                    disabled={rolesLoading || roles.length === 0}
+                    onValueChange={field.onChange}
+                    disabled={loading || rolesLoading || roles.length === 0}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={rolesLoading ? "Cargando roles..." : "Selecciona un rol"} />
+                        <SelectValue
+                          placeholder={
+                            rolesLoading
+                              ? "Cargando roles..."
+                              : roles.length === 0
+                              ? "No hay roles disponibles"
+                              : "Selecciona un rol"
+                          }
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.name}>
+                        <SelectItem
+                          key={role.id}
+                          value={role.name}
+                          onSelect={(e) => e.preventDefault()}
+                        >
                           {role.name}
                         </SelectItem>
                       ))}
@@ -202,21 +272,32 @@ export function UserModal({ children, onSuccess }: UserModalProps) {
                 </FormItem>
               )}
             />
-            
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                type="button" 
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                type="button"
                 onClick={() => setOpen(false)}
                 disabled={loading}
               >
                 Cancelar
               </Button>
-              <Button 
-                type="submit" 
-                disabled={loading || rolesLoading || roles.length === 0}
+              <Button
+                type="submit"
+                disabled={
+                  loading ||
+                  rolesLoading ||
+                  roles.length === 0 ||
+                  !form.formState.isDirty
+                }
               >
-                {loading ? "Creando..." : "Crear Usuario"}
+                {loading
+                  ? userToEdit
+                    ? "Actualizando..."
+                    : "Creando..."
+                  : userToEdit
+                  ? "Actualizar Usuario"
+                  : "Crear Usuario"}
               </Button>
             </div>
           </form>

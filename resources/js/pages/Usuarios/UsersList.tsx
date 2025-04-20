@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Icons } from "@/components/icons";
+import { UserModal } from "./UsuarioModal";
 
 interface User {
   id: number;
@@ -39,6 +40,23 @@ export function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await userService.fetchUsers();
+      const formattedData = data.map((user: any) => ({
+        ...user,
+        email_verified_at: user.email_verified_at || null,
+      }));
+      setUsers(formattedData);
+    } catch (err) {
+      setError("Error al cargar los usuarios");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDeleteUser = async (userId: number) => {
     try {
@@ -63,23 +81,6 @@ export function UserList() {
   };
 
   useEffect(() => {
-    async function loadUsers() {
-      try {
-        setLoading(true);
-        const data = await userService.fetchUsers();
-        const formattedData = data.map((user: any) => ({
-          ...user,
-          email_verified_at: user.email_verified_at || null,
-        }));
-        setUsers(formattedData);
-      } catch (err) {
-        setError("Error al cargar los usuarios");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadUsers();
   }, []);
 
@@ -171,7 +172,7 @@ export function UserList() {
                     </AvatarFallback>
                   </Avatar>
                 </TooltipTrigger>
-              
+               
               </Tooltip>
             </TooltipProvider>
             
@@ -242,10 +243,20 @@ export function UserList() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Icons.edit className="mr-2 h-4 w-4" />
-                  Editar
-                </DropdownMenuItem>
+                <UserModal 
+                  userToEdit={{
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.roles?.[0] || ''
+                  }}
+                  onSuccess={loadUsers}
+                >
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Icons.edit className="mr-2 h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                </UserModal>
                 <DropdownMenuItem onClick={() => handleDeleteUser(user.id)}>
                   <Icons.trash className="mr-2 h-4 w-4 text-red-500" />
                   <span className="text-red-500">Eliminar</span>
