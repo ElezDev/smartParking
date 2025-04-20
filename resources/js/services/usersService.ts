@@ -33,7 +33,7 @@ export const userService = {
   },
 
   async deleteUser(id: string): Promise<void> {
-    await api.delete(`/usuarios/${id}`);
+    await api.delete(`/delete-usuarios/${id}`);
   },
 
   // Gestión de Roles

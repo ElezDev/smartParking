@@ -4,7 +4,15 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, CircleParking, Folder, LayoutGrid, ParkingCircle, ParkingSquare, PersonStanding, User2, User2Icon } from 'lucide-react';
+import { 
+    LayoutDashboard, 
+    Users,           
+    ParkingSquare,  
+    Shield,          
+    UserCog,         
+    BookOpen,        
+  } from 'lucide-react';
+  
 import AppLogo from './app-logo';
 import { permission } from 'process';
 
@@ -12,29 +20,30 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
-        icon: LayoutGrid,
+        icon: LayoutDashboard,
     },
     {
         title: 'Clientes',
         href: '/clientes',
-        icon: User2,
+        icon: Users, 
     },
     {
         title: 'Espacios',
         href: '/espacios',
-        icon: CircleParking,
+        icon: ParkingSquare, 
     },
     {
         title: 'Roles',
         href: '/roles',
-        icon: PersonStanding,
+        icon: Shield, 
     },
     {
         title: 'Usuarios',
         href: '/usuarios',
-        icon: User2Icon,
+        icon: UserCog, 
     },
 ];
+
 
 const footerNavItems: NavItem[] = [
     // {

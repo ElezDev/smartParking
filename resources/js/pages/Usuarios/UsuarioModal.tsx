@@ -1,5 +1,7 @@
 // components/user-modal.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
+import axios from "axios";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,15 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -24,31 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "sonner";
-import { userService } from "@/services/usersService";
-import { fetchRoles, RoleResponse } from "@/services/rolesService";
-
-const userFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "El nombre debe tener al menos 2 caracteres.",
-  }),
-  email: z.string().email({
-    message: "Por favor ingresa un email válido.",
-  }),
-  password: z
-    .string()
-    .min(8, {
-      message: "La contraseña debe tener al menos 8 caracteres.",
-    })
-    .optional()
-    .or(z.literal("")),
-  role: z.string().min(1, "Debes seleccionar un rol"),
-});
-
-type UserFormValues = z.infer<typeof userFormSchema>;
 
 interface UserModalProps {
   children: React.ReactNode;
@@ -61,30 +31,43 @@ interface UserModalProps {
   };
 }
 
+interface Role {
+  id: number;
+  name: string;
+}
+
 export function UserModal({ children, onSuccess, userToEdit }: UserModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [roles, setRoles] = useState<RoleResponse[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [rolesLoading, setRolesLoading] = useState(false);
-
-  const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      role: "",
-    },
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "",
   });
 
-  // Cargar roles cuando se abre el modal
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        name: userToEdit?.name || "",
+        email: userToEdit?.email || "",
+        password: "",
+        role: userToEdit?.role || (roles.length > 0 ? roles[0].name : ""),
+      });
+    }
+  }, [open, userToEdit, roles]);
+
   useEffect(() => {
     const loadRoles = async () => {
       if (open && roles.length === 0) {
         setRolesLoading(true);
         try {
-          const rolesData = await fetchRoles();
-          setRoles(rolesData);
+          const response = await axios.get("/api/roles");
+          setRoles(response.data);
         } catch (error) {
           toast.error("Error al cargar los roles");
         } finally {
@@ -96,212 +79,189 @@ export function UserModal({ children, onSuccess, userToEdit }: UserModalProps) {
     loadRoles();
   }, [open]);
 
-  // Resetear formulario cuando cambia el estado de apertura o el usuario a editar
-  useEffect(() => {
-    if (open) {
-      form.reset({
-        name: userToEdit?.name || "",
-        email: userToEdit?.email || "",
-        password: "",
-        role: userToEdit?.role || (roles.length > 0 ? roles[0].name : ""),
-      });
-    }
-  }, [open, userToEdit, roles]);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-  const onSubmit = async (data: UserFormValues) => {
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      role: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
+    setErrors({});
+
     try {
-      if (userToEdit) {
-        // Actualizar usuario existente
-        const updatedUser = await userService.updateUser(
-          userToEdit.id.toString(),
-          {
-            name: data.name,
-            email: data.email,
-            ...(data.password && { password: data.password }),
-            role: data.role,
-          }
-        );
-        toast.success(`Usuario ${updatedUser.name} actualizado exitosamente`);
-      } else {
-        // Crear nuevo usuario
-        const newUser = await userService.createUser({
-          name: data.name,
-          email: data.email,
-          password: data.password || "",
-          role: data.role,
-        });
-        toast.success(`Usuario ${newUser.name} creado exitosamente`);
-      }
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        ...(formData.password && { password: formData.password })
+      };
+
+      const response = userToEdit
+        ? await axios.put(`/api/update-user/${userToEdit.id}`, payload)
+        : await axios.post("/api/usuarios", payload);
+
+      toast.success(
+        `Usuario ${userToEdit ? "actualizado" : "creado"} exitosamente`
+      );
 
       setOpen(false);
-      form.reset();
       onSuccess?.();
-    } catch (error: any) {
-      if (error.response?.data?.errors) {
-        const errors = error.response.data.errors;
-        Object.keys(errors).forEach((key) => {
-          toast.error(errors[key][0]);
-        });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        if (error.response.status === 422) {
+          setErrors(error.response.data.errors || {});
+        } else {
+          toast.error(
+            error.response.data.message || 
+            (userToEdit ? "Error al actualizar el usuario" : "Error al crear el usuario")
+          );
+        }
       } else {
-        toast.error(
-          userToEdit
-            ? "Error al actualizar el usuario"
-            : "Error al crear el usuario"
-        );
+        toast.error("Ocurrió un error inesperado");
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // Componente CustomDialogTrigger para evitar problemas de focus
+  const CustomDialogTrigger = forwardRef<HTMLButtonElement, { children: React.ReactNode }>(
+    ({ children }, ref) => (
+      <DialogTrigger asChild ref={ref}>
+        {children}
+      </DialogTrigger>
+    )
+  );
+  CustomDialogTrigger.displayName = "CustomDialogTrigger";
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent
-        className="sm:max-w-[425px]"
-        onInteractOutside={(e) => e.preventDefault()} // Evita cerrar al hacer clic fuera
-      >
+      <CustomDialogTrigger>
+        {children}
+      </CustomDialogTrigger>
+      
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
             {userToEdit ? "Editar Usuario" : "Nuevo Usuario"}
           </DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Nombre completo</Label>
+            <Input
+              id="name"
               name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre completo</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ej: Juan Pérez"
-                      {...field}
-                      disabled={loading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              placeholder="Ej: Juan Pérez"
+              value={formData.name}
+              onChange={handleChange}
+              disabled={loading}
             />
+            {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+          </div>
 
-            <FormField
-              control={form.control}
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
               name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="Ej: usuario@example.com"
-                      {...field}
-                      disabled={loading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              type="email"
+              placeholder="Ej: usuario@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              disabled={loading}
             />
+            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+          </div>
 
-            <FormField
-              control={form.control}
+          <div>
+            <Label htmlFor="password">
+              {userToEdit ? "Nueva contraseña" : "Contraseña"}
+            </Label>
+            <Input
+              id="password"
               name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {userToEdit ? "Nueva contraseña" : "Contraseña"}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder={
-                        userToEdit
-                          ? "Dejar vacío para no cambiar"
-                          : "Mínimo 8 caracteres"
-                      }
-                      {...field}
-                      value={field.value || ""}
-                      disabled={loading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              type="password"
+              placeholder={
+                userToEdit
+                  ? "Dejar vacío para no cambiar"
+                  : "Mínimo 8 caracteres"
+              }
+              value={formData.password}
+              onChange={handleChange}
+              disabled={loading}
             />
+            {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+          </div>
 
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rol</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={loading || rolesLoading || roles.length === 0}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            rolesLoading
-                              ? "Cargando roles..."
-                              : roles.length === 0
-                              ? "No hay roles disponibles"
-                              : "Selecciona un rol"
-                          }
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem
-                          key={role.id}
-                          value={role.name}
-                          onSelect={(e) => e.preventDefault()}
-                        >
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div>
+            <Label htmlFor="role">Rol</Label>
+            <Select
+              value={formData.role}
+              onValueChange={handleRoleChange}
+              disabled={loading || rolesLoading || roles.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    rolesLoading
+                      ? "Cargando roles..."
+                      : roles.length === 0
+                      ? "No hay roles disponibles"
+                      : "Selecciona un rol"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.name}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.role && <p className="text-red-500 text-sm">{errors.role}</p>}
+          </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => setOpen(false)}
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={
-                  loading ||
-                  rolesLoading ||
-                  roles.length === 0 ||
-                  !form.formState.isDirty
-                }
-              >
-                {loading
-                  ? userToEdit
-                    ? "Actualizando..."
-                    : "Creando..."
-                  : userToEdit
-                  ? "Actualizar Usuario"
-                  : "Crear Usuario"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setOpen(false)}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={
+                loading ||
+                rolesLoading ||
+                roles.length === 0
+              }
+            >
+              {loading
+                ? userToEdit
+                  ? "Actualizando..."
+                  : "Creando..."
+                : userToEdit
+                ? "Actualizar Usuario"
+                : "Crear Usuario"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

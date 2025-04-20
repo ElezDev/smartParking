@@ -14,15 +14,19 @@ import {
 } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Icons } from "@/components/icons";
 import { UserModal } from "./UsuarioModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface User {
   id: number;
@@ -40,6 +44,8 @@ export function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
 
   const loadUsers = async () => {
     try {
@@ -58,26 +64,24 @@ export function UserList() {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
     try {
-      await userService.deleteUser(userId.toString());
-      setUsers(users.filter(user => user.id !== userId));
+      await userService.deleteUser(userToDelete.toString());
+      setUsers(users.filter(user => user.id !== userToDelete));
       toast.success("Usuario eliminado correctamente");
     } catch (err) {
       toast.error("Error al eliminar el usuario");
+    } finally {
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
     }
   };
 
-  const handleStatusChange = async (userId: number, newStatus: string) => {
-    // try {
-    //   await userService.updateUser(userId.toString(), newStatus.toString());
-    //   setUsers(users.map(user => 
-    //     user.id === userId ? { ...user, status: newStatus } : user
-    //   ));
-    //   toast.success(`Estado del usuario actualizado a ${newStatus}`);
-    // } catch (err) {
-    //   toast.error("Error al actualizar el estado del usuario");
-    // }
+  const openDeleteDialog = (userId: number) => {
+    setUserToDelete(userId);
+    setDeleteDialogOpen(true);
   };
 
   useEffect(() => {
@@ -146,103 +150,76 @@ export function UserList() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {users.map((user) => (
-        <Card 
-          key={user.id} 
-          className="hover:shadow-lg transition-shadow duration-200 group relative"
-        >
-          {/* Indicador de estado */}
-          <div className={`absolute top-2 right-2 h-3 w-3 rounded-full 
-            ${user.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}
-          />
-          
-          <CardHeader className="flex flex-row items-center gap-4">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Avatar className="h-12 w-12 border-2 border-white group-hover:border-primary transition-colors">
-                    <AvatarImage 
-                      src={user.avatar || "/default-avatar.png"} 
-                      alt={user.name}
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="bg-muted">
-                      {user.name.split(" ").map(n => n[0]).join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                </TooltipTrigger>
-               
-              </Tooltip>
-            </TooltipProvider>
+    <>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {users.map((user) => (
+          <Card 
+            key={user.id} 
+            className="hover:shadow-lg transition-shadow duration-200 group relative"
+          >
+            {/* Indicador de estado */}
+            <div className={`absolute top-2 right-2 h-3 w-3 rounded-full 
+              ${user.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}
+            />
             
-            <div className="space-y-1 overflow-hidden">
-              <CardTitle className="text-lg truncate" title={user.name}>
-                {user.name}
-              </CardTitle>
-              <div className="flex items-center gap-1">
-                <p className="text-sm text-muted-foreground truncate" title={user.email}>
-                  {user.email}
-                </p>
-                {user.email_verified_at && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <Icons.verified className="h-4 w-4 text-blue-500" />
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Email verificado</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
+            <CardHeader className="flex flex-row items-center gap-4">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Avatar className="h-12 w-12 border-2 border-white group-hover:border-primary transition-colors">
+                      <AvatarImage 
+                        src={user.avatar || "/default-avatar.png"} 
+                        alt={user.name}
+                        className="object-cover"
+                      />
+                      <AvatarFallback className="bg-muted">
+                        {user.name.split(" ").map(n => n[0]).join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <div className="space-y-1 overflow-hidden">
+                <CardTitle className="text-lg truncate" title={user.name}>
+                  {user.name}
+                </CardTitle>
+                <div className="flex items-center gap-1">
+                  <p className="text-sm text-muted-foreground truncate" title={user.email}>
+                    {user.email}
+                  </p>
+                  {user.email_verified_at && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Icons.verified className="h-4 w-4 text-blue-500" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Email verificado</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="flex justify-between items-center">
-            <div className="flex flex-wrap gap-2">
-              {user.roles?.map(role => (
-                <Badge 
-                  key={role} 
-                  variant={role === "admin" ? "default" : "secondary"}
-                  className="capitalize"
-                >
-                  {role.toLowerCase()}
-                </Badge>
-              ))}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Badge 
-                    variant={user.status === "active" ? "default" : "destructive"}
-                    className="capitalize cursor-pointer hover:opacity-80 transition-opacity"
-                  >
-                    {user.status || 'active'}
-                  </Badge>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'active')}>
-                    <Icons.checkCircle className="mr-2 h-4 w-4 text-green-500" />
-                    Activar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'inactive')}>
-                    <Icons.xCircle className="mr-2 h-4 w-4 text-red-500" />
-                    Desactivar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            </CardHeader>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                  <Icons.moreVertical className="h-4 w-4" />
-                  <span className="sr-only">Opciones de usuario</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+            <CardContent className="flex justify-between items-center">
+              <div className="flex flex-wrap gap-2">
+                {user.roles?.map(role => (
+                  <Badge 
+                    key={role} 
+                    variant={role === "admin" ? "default" : "secondary"}
+                    className="capitalize"
+                  >
+                    {role.toLowerCase()}
+                  </Badge>
+                ))}
+              </div>
+              
+              <div className="flex gap-2">
                 <UserModal 
                   userToEdit={{
                     id: user.id,
@@ -252,20 +229,47 @@ export function UserList() {
                   }}
                   onSuccess={loadUsers}
                 >
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Icons.edit className="mr-2 h-4 w-4" />
-                    Editar
-                  </DropdownMenuItem>
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                    <Icons.edit className="h-4 w-4" />
+                    <span className="sr-only">Editar usuario</span>
+                  </Button>
                 </UserModal>
-                <DropdownMenuItem onClick={() => handleDeleteUser(user.id)}>
-                  <Icons.trash className="mr-2 h-4 w-4 text-red-500" />
-                  <span className="text-red-500">Eliminar</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                  onClick={() => openDeleteDialog(user.id)}
+                >
+                  <Icons.trash className="h-4 w-4" />
+                  <span className="sr-only">Eliminar usuario</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Diálogo de confirmación para eliminar */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El usuario será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteUser}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

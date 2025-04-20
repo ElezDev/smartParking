@@ -164,9 +164,7 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
                 setCurrentPage(1); // Resetear a la primera página al buscar
               }}
             />
-            {/* <ClienteModal onSuccess={() => setClientes([])}>
-              <Button>Nuevo Cliente</Button>
-            </ClienteModal> */}
+       
           </div>
         </CardHeader>
         <CardContent>
@@ -204,7 +202,7 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
                             variant="destructive" 
                             size="sm"
                             onClick={() => handleDelete(cliente.id)}
-                          >
+                              >
                             Eliminar
                           </Button>
                         </TableCell>

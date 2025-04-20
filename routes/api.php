@@ -40,5 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::apiResource('usuarios', UsuarioController::class);
-        Route::post('usuarios/{user}/asignar-rol', [UsuarioController::class, 'assignRole']);
+    Route::put('update-user/{idUser}', [UsuarioController::class, 'updateUser']);
+    Route::delete('delete-usuarios/{idUser}', [UsuarioController::class, 'deleteUsers']);
+    Route::post('usuarios/{user}/asignar-rol', [UsuarioController::class, 'assignRole']);
 });

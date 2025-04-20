@@ -27,8 +27,8 @@ class RolePermissionSeeder extends Seeder
             Permission::create(['name' => $permission]);
         }
 
-        $admin = Role::create(['name' => 'admin']);
-        $admin->givePermissionTo(Permission::all());
+        // $admin = Role::create(['name' => 'admin']);
+        // $admin->givePermissionTo(Permission::all());
 
         $operador = Role::create(['name' => 'operador']);
         $operador->givePermissionTo([
