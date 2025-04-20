@@ -50,12 +50,7 @@ const mainNavItems: (NavItem & { permission?: string })[] = [
   
 
 const footerNavItems: (NavItem & { permission?: string })[] = [
-    // {
-    //     title: 'Documentación',
-    //     href: '/documentacion',
-    //     icon: BookOpen,
-    //     permission: 'view documentation',
-    // },
+   
 ];
 
 export function AppSidebar() {
