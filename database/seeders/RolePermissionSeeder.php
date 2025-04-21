@@ -25,6 +25,7 @@ class RolePermissionSeeder extends Seeder
             'gestionar clientes',
             'gestionar espacios',
             'dashboard',
+            'gestionar tarifas',
         ];
 
         // Crear permisos si no existen

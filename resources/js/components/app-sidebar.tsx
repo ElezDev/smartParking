@@ -46,6 +46,18 @@ const mainNavItems: (NavItem & { permission?: string })[] = [
       icon: UserCog, 
       permission: 'gestionar usuarios',
     },
+    {
+      title: 'Tarifas',
+      href: '/tarifas',
+      icon: BookOpen, 
+      permission: 'gestionar tarifas',
+    },
+    {
+      title: 'Configuración',
+      href: '/configuracion',
+      icon: LayoutDashboard,
+      permission: 'gestionar configuracion',
+    },
   ];
   
 

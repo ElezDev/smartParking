@@ -29,3 +29,13 @@ export interface User {
     updated_at: string;
     permissions?: Permissions[];
   }
+  export interface Tarifa {
+    id: number;
+    tipo_vehiculo: string;
+    valor_hora: string;
+    valor_dia: string;
+    valor_minuto: string;
+    valor_mes: string;
+    created_at: string | null;
+    updated_at: string | null;
+  }

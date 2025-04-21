@@ -12,14 +12,15 @@ class TarifaController extends Controller
      */
     public function index()
     {
-        //
+        $tarifas = Tarifa::all();
+        return response()->json($tarifas);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+
+
+    public function show(Tarifa $tarifa)
     {
+        return response()->json($tarifa);
         //
     }
 
@@ -28,22 +29,8 @@ class TarifaController extends Controller
      */
     public function store(Request $request)
     {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Tarifa $tarifa)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Tarifa $tarifa)
-    {
+        $tarifa = Tarifa::create($request->all());
+        return response()->json($tarifa, 201);
         //
     }
 
@@ -52,6 +39,8 @@ class TarifaController extends Controller
      */
     public function update(Request $request, Tarifa $tarifa)
     {
+        $tarifa->update($request->all());
+        return response()->json($tarifa);
         //
     }
 
@@ -60,7 +49,10 @@ class TarifaController extends Controller
      */
     public function destroy(Tarifa $tarifa)
     {
+        $tarifa->delete();
+        return response()->json(null, 204);
         //
+        
     }
 
     public function calcularTarifa(Request $request)

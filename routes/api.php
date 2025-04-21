@@ -44,3 +44,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('delete-usuarios/{idUser}', [UsuarioController::class, 'deleteUsers']);
     Route::post('usuarios/{user}/asignar-rol', [UsuarioController::class, 'assignRole']);
 });
+
+Route::apiResource('tarifas', TarifaController::class)->except(['create', 'edit']);

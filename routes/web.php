@@ -62,6 +62,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/usuarios/{usuario}/UsuarioModal', function () {
         return Inertia::render('Usuarios/UsuarioModal');
     })->name('usuarios.edit');
+
+
+
+    //tarifas
+    Route::get('/tarifas', function () {
+        return Inertia::render('Tarifas/TarifasPage');
+    })->name('tarifas');
+    Route::get('/tarifas/TarifaModal', function () {
+        return Inertia::render('Tarifas/TarifaModal');
+    })->name('tarifas.create');
+    Route::get('/tarifas/{tarifa}/TarifaModal', function () {
+        return Inertia::render('Tarifas/TarifaModal');
+    })->name('tarifas.edit');
 });
 
 
