@@ -101,20 +101,15 @@ class RegistroController extends Controller
             'tarifa' => 'required|numeric|min:0'
         ]);
 
-        $tarifaFrontend = $request->input('tarifa');
-
-
-        $registro->update([
-            'salida' => now(),
-            'tarifa' => $tarifaFrontend,
-        ]);
+        $registro->salida = Carbon::now();
+        $registro->tarifa = $request->input('tarifa');
+        $registro->save();
 
         Espacio::where('id', $registro->espacio_id)->update(['disponible' => 1]);
 
         return response()->json([
             'message' => 'Servicio finalizado correctamente',
             'registro' => $registro,
-
         ]);
     }
 

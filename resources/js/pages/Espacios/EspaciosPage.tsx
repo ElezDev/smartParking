@@ -23,7 +23,7 @@ export default function EspaciosPage() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Gestión de Clientes" />
+            <Head title="Espacios" />
             <div className="flex flex-1 flex-col gap-4 rounded-xl p-4 min-h-[85vh]">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold">Espacios del Parqueadero</h1>
