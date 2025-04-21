@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ClienteService } from '@/services/clienteService';
 import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import {
   Card,
@@ -18,7 +18,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import ClienteModal from './ClienteModal'; // Asegúrate de importar tu componente modal
+import ClienteModal from './ClienteModal';
 import {
   Pagination,
   PaginationContent,
@@ -28,6 +28,16 @@ import {
   PaginationNext,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ClienteListProps {
   refreshTrigger?: number;
@@ -39,14 +49,17 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 5; // Número de elementos por página
+  const [clienteToDelete, setTarifaToDelete] = useState<number | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const fetchClientes = async () => {
       try {
         setLoading(true);
         const response = await ClienteService.getAll();
-        setClientes(response.data || response); // Dependiendo de cómo venga la respuesta
+        setClientes(response.data || response);
         setTotalPages(Math.ceil((response.data?.length || response.length) / itemsPerPage));
       } catch (error) {
         console.error('Error fetching clientes:', error);
@@ -71,19 +84,27 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
     currentPage * itemsPerPage
   );
 
-  const handleDelete = async (id: number) => {
-    try {
-      const confirmDelete = confirm('¿Estás seguro de que deseas eliminar este cliente?');
-      if (!confirmDelete) return;
 
-      await ClienteService.delete(id);
+  const handleDeleteConfirm = async () => {
+    if (!clienteToDelete) return;
+
+    try {
+      await ClienteService.delete(clienteToDelete);
       toast.success('Cliente eliminado correctamente');
-      setClientes(clientes.filter(cliente => cliente.id !== id));
+      setClientes(clientes.filter(cliente => cliente.id !== clienteToDelete));
     } catch (error) {
       console.error('Error deleting cliente:', error);
       toast.error('Error al eliminar el cliente');
+    } finally {
+      setDeleteDialogOpen(false);
     }
   };
+  const handleDeleteClick = (id: number) => {
+    setTarifaToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -99,7 +120,7 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
       for (let i = 1; i <= totalPages; i++) {
         items.push(
           <PaginationItem key={i}>
-            <PaginationLink 
+            <PaginationLink
               isActive={i === currentPage}
               onClick={() => handlePageChange(i)}
             >
@@ -127,7 +148,7 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
       for (let i = startPage; i <= endPage; i++) {
         items.push(
           <PaginationItem key={i}>
-            <PaginationLink 
+            <PaginationLink
               isActive={i === currentPage}
               onClick={() => handlePageChange(i)}
             >
@@ -161,10 +182,10 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setCurrentPage(1); // Resetear a la primera página al buscar
+                setCurrentPage(1);
               }}
             />
-       
+
           </div>
         </CardHeader>
         <CardContent>
@@ -195,14 +216,22 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
                         <TableCell>{cliente.email}</TableCell>
                         <TableCell>{cliente.telefono}</TableCell>
                         <TableCell className="text-right space-x-2">
-                          <ClienteModal cliente={cliente} onSuccess={() => setClientes([])}>
+                          <ClienteModal
+                            cliente={cliente}
+                            onSuccess={() => {
+                              setClientes([]);
+                              ClienteService.getAll().then(response => {
+                                setClientes(response.data || response);
+                              });
+                            }}
+                          >
                             <Button variant="outline" size="sm">Editar</Button>
                           </ClienteModal>
-                          <Button 
-                            variant="destructive" 
+                          <Button
+                            variant="destructive"
                             size="sm"
-                            onClick={() => handleDelete(cliente.id)}
-                              >
+                            onClick={() => handleDeleteClick(cliente.id)}
+                          >
                             Eliminar
                           </Button>
                         </TableCell>
@@ -217,22 +246,22 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
                   )}
                 </TableBody>
               </Table>
-              
+
               {filteredClientes.length > itemsPerPage && (
                 <div className="mt-4">
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
-                        <PaginationPrevious 
+                        <PaginationPrevious
                           onClick={() => handlePageChange(currentPage - 1)}
                           className={currentPage === 1 ? 'opacity-50 pointer-events-none' : ''}
                         />
                       </PaginationItem>
-                      
+
                       {renderPaginationItems()}
-                      
+
                       <PaginationItem>
-                        <PaginationNext 
+                        <PaginationNext
                           onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
                           className={currentPage === totalPages ? 'opacity-50 pointer-events-none' : ''}
                         />
@@ -241,6 +270,25 @@ export function ClienteList({ refreshTrigger }: ClienteListProps) {
                   </Pagination>
                 </div>
               )}
+              <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción no se puede deshacer. Se eliminará permanentemente el cliente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteConfirm}
+                      className="bg-red-600 text-white hover:bg-red-700"
+                    >
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           )}
         </CardContent>

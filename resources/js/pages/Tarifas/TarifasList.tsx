@@ -181,8 +181,7 @@ const TarifasList: React.FC<TarifasListProps> = ({ onEdit, onSuccess }) => {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
             onClick={handleDeleteConfirm}
-            className="bg-red-600 text-white hover:bg-red-700"
-          >
+            className="bg-red-600 text-white hover:bg-red-700">
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
